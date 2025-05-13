@@ -1,0 +1,39 @@
+name: app
+description: "A new Flutter project."
+
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.7.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^0.13.4
+  rive: ^0.12.3
+  lottie: ^2.0.0
+  animated_text_kit: ^4.2.1
+  flutter_sequence_animation: 4.0.0
+  cupertino_icons: ^1.0.8
+  mongo_dart: ^0.7.0
+  firebase_core: ^2.32.0
+  cloud_firestore: ^4.0.1
+  awesome_dialog: ^3.1.0
+  local_auth: ^2.1.5
+  flutter_secure_storage: ^8.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/lottie/animate.json
+    - assets/images/background.png
+    - assets/lottie/succes-register.json
+    - assets/lottie/cerrar-sesion.json
