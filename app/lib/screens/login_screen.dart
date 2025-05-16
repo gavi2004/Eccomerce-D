@@ -6,7 +6,26 @@ import 'package:app/api_service.dart';
 import 'package:app/screens/home_admin.dart';
 import 'package:app/screens/home_cliente.dart';
 import 'package:app/screens/home_empleado.dart';
+import 'package:lottie/lottie.dart';
+import 'index.dart'; // En login_screen.dart
+import 'register_screen.dart'; // En login_screen.dart si no está ya importado
 
+// Puedes poner esto arriba de tu clase o en un archivo utils
+void navegarConAnimacion(BuildContext context, Widget destino) {
+  Navigator.pushReplacement(
+    context,
+    PageRouteBuilder(
+      pageBuilder: (context, animation, secondaryAnimation) => destino,
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        return FadeTransition(
+          opacity: animation,
+          child: child,
+        );
+      },
+      transitionDuration: const Duration(milliseconds: 400),
+    ),
+  );
+}
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -30,12 +49,8 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
-    _initAuth();
-  }
-
-  Future<void> _initAuth() async {
-    await _checkBiometrics();
-    await _checkCredencialesGuardadas();
+    _checkBiometrics();
+    _checkCredencialesGuardadas();
   }
 
   Future<void> _checkBiometrics() async {
@@ -104,48 +119,79 @@ class _LoginScreenState extends State<LoginScreen> {
         _contrasenaController.text.trim(),
       );
 
-      setState(() {
-        _isLoading = false;
-        _mensaje = result['success'] 
-            ? '✅ Bienvenido ${result['user']['nombre']}' 
-            : '❌ ${result['error']}';
-      });
+      if (result['success'] == true) {
+        await _guardarCredenciales();
+        await storage.write(key: 'usuario_id', value: result['user']['_id']);
 
-    if (result['success'] == true) {
-  await _guardarCredenciales();
+        if (mounted) {
+          // Mostrar diálogo con animación Lottie
+          await showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (BuildContext context) {
+              return Dialog(
+                backgroundColor: Colors.transparent,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Lottie.asset(
+                      'assets/lottie/login.json',
+                      width: 200,
+                      height: 200,
+                      repeat: false,
+                      onLoaded: (composition) {
+                        Future.delayed(composition.duration, () {
+                          Navigator.pop(context);
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      '¡Bienvenido ${result['user']['nombre']}!',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          );
 
-  if (mounted) {
-    int nivel = result['user']['nivel']; // Obtener nivel correctamente
+          int nivel = result['user']['nivel'];
+          Widget destino;
 
-    Widget destino;
+          if (nivel == 1) {
+            destino = HomeCliente(nombre: result['user']['nombre']);
+          } else if (nivel == 2) {
+            destino = const HomeEmpleado();
+          } else if (nivel == 3) {
+            destino = const HomeAdmin();
+          } else {
+            destino = const Scaffold(
+              body: Center(child: Text("Nivel no reconocido")),
+            );
+          }
 
-    if (nivel == 1) {
-      destino = HomeCliente(nombre: result['user']['nombre']);
-    } else if (nivel == 2) {
-      destino = const HomeEmpleado();
-    } else if (nivel == 3) {
-      destino = const HomeAdmin();
-    } else {
-      destino = const Scaffold(
-        body: Center(child: Text("Nivel no reconocido")),
-      );
-    }
-
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => destino),
-    );
-  }
-
-}
-
-
+          navegarConAnimacion(context, destino);
+        }
+      } else {
+        setState(() {
+          _mensaje = '❌ ${result['error']}';
+        });
+      }
     } catch (e) {
       setState(() {
         _isLoading = false;
         _mensaje = '❌ Error de conexión';
       });
       debugPrint('Error en login: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -251,84 +297,193 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Iniciar Sesión')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              TextFormField(
-                controller: _correoController,
-                decoration: const InputDecoration(labelText: 'Correo'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Ingrese su correo';
-                  }
-                  if (!_validarEmail(value)) {
-                    return 'Ingrese un correo válido';
-                  }
-                  return null;
-                },
-                keyboardType: TextInputType.emailAddress,
-                enabled: !_isLoading,
+      body: Stack(
+        children: [
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.blueAccent, Colors.purpleAccent],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _contrasenaController,
-                decoration: const InputDecoration(labelText: 'Contraseña'),
-                obscureText: true,
-                validator: (value) => 
-                  value == null || value.isEmpty ? 'Ingrese su contraseña' : null,
-                enabled: !_isLoading,
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _login,
-                  child: _isLoading 
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text('Iniciar Sesión'),
-                ),
-              ),
-              if (_biometricAvailable && _credencialesGuardadas) ...[
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton(
-                    onPressed: _isLoading ? null : _loginConHuella,
-                    child: const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.fingerprint),
-                        SizedBox(width: 8),
-                        Text('Usar huella digital'),
-                      ],
+            ),
+          ),
+          SafeArea(
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  const Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: Text(
+                      'Iniciar Sesión',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-                ),
-              ],
-              if (_credencialesGuardadas) ...[
-                const SizedBox(height: 12),
-                TextButton(
-                  onPressed: _isLoading ? null : _eliminarCredenciales,
-                  child: const Text(
-                    'Eliminar credenciales guardadas', 
-                    style: TextStyle(color: Colors.red),
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min, // Agregamos esta línea
+                        children: [
+                          TextFormField(
+                            controller: _correoController,
+                            decoration: const InputDecoration(labelText: 'Correo'),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Ingrese su correo';
+                              }
+                              if (!_validarEmail(value)) {
+                                return 'Ingrese un correo válido';
+                              }
+                              return null;
+                            },
+                            keyboardType: TextInputType.emailAddress,
+                            enabled: !_isLoading,
+                          ),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            controller: _contrasenaController,
+                            decoration: const InputDecoration(labelText: 'Contraseña'),
+                            obscureText: true,
+                            validator: (value) => 
+                              value == null || value.isEmpty ? 'Ingrese su contraseña' : null,
+                            enabled: !_isLoading,
+                          ),
+                          const SizedBox(height: 24),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: _isLoading ? null : _login,
+                              child: _isLoading 
+                                  ? const CircularProgressIndicator(color: Colors.white)
+                                  : const Text('Iniciar Sesión'),
+                            ),
+                          ),
+                          if (_biometricAvailable && _credencialesGuardadas) ...[
+                            const SizedBox(height: 12),
+                            SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButton(
+                                onPressed: _isLoading ? null : _loginConHuella,
+                                child: const Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.fingerprint),
+                                    SizedBox(width: 8),
+                                    Text('Usar huella digital'),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                          if (_credencialesGuardadas) ...[
+                            const SizedBox(height: 12),
+                            TextButton(
+                              onPressed: _isLoading ? null : _eliminarCredenciales,
+                              child: const Text(
+                                'Eliminar credenciales guardadas', 
+                                style: TextStyle(color: Colors.red),
+                              ),
+                            ),
+                          ],
+                          const SizedBox(height: 20),
+                          Text(
+                            _mensaje,
+                            style: TextStyle(
+                              color: _mensaje.startsWith('✅') ? Colors.green : Colors.red,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
-              ],
-              const SizedBox(height: 20),
-              Text(
-                _mensaje,
-                style: TextStyle(
-                  color: _mensaje.startsWith('✅') ? Colors.green : Colors.red,
-                  fontWeight: FontWeight.bold,
-                ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.2),
+              spreadRadius: 1,
+              blurRadius: 5,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildNavButton(
+                icon: Icons.home,
+                label: 'Inicio',
+                onTap: () {
+                  navegarConAnimacion(context, const IndexPage());
+                },
+              ),
+              _buildNavButton(
+                icon: Icons.login,
+                label: 'Iniciar Sesión',
+                isSelected: true,
+                onTap: () {},
+              ),
+              _buildNavButton(
+                icon: Icons.person_add,
+                label: 'Registro',
+                onTap: () {
+                  navegarConAnimacion(context, const RegisterScreen());
+                },
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavButton({
+    required IconData icon,
+    required String label,
+    bool isSelected = false,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.deepPurple.withOpacity(0.1) : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? Colors.deepPurple : Colors.grey,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? Colors.deepPurple : Colors.grey,
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          ],
         ),
       ),
     );

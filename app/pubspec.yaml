@@ -23,6 +23,8 @@ dependencies:
   awesome_dialog: ^3.1.0
   local_auth: ^2.1.5
   flutter_secure_storage: ^8.0.0
+  dart_bcv: ^1.0.0
+  image_picker: ^1.1.2
 
 dev_dependencies:
   flutter_test:
@@ -37,3 +39,7 @@ flutter:
     - assets/images/background.png
     - assets/lottie/succes-register.json
     - assets/lottie/cerrar-sesion.json
+    - assets/lottie/create-user-succes.json
+    - assets/lottie/registro-exitoso.json
+    - assets/lottie/login.json
+

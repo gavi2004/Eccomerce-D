@@ -3,6 +3,10 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:app/api_service.dart';
+import 'create_user.dart';
+import '../home_admin.dart';
+import '../../utils/navigation.dart';
+import '../inventory/list_inventory.dart';
 
 class UserListScreen extends StatefulWidget {
   const UserListScreen({Key? key}) : super(key: key);
@@ -263,8 +267,13 @@ class _UserListScreenState extends State<UserListScreen> {
         title: const Text('Lista de Usuarios'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _fetchUsers,
+            icon: const Icon(Icons.person_add),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const CreateUserScreen()),
+              );
+            },
           ),
         ],
       ),
@@ -305,6 +314,102 @@ class _UserListScreenState extends State<UserListScreen> {
                           ),
           ),
         ],
+      ),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: Colors.transparent,
+          boxShadow: [BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 5,
+            offset: const Offset(0, -2),
+          )],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildNavButton(
+                icon: Icons.home,
+                label: 'Inicio',
+                isSelected: false,
+                onTap: () {
+                 navegarConFade(context, const HomeAdmin());
+                },
+              ),
+              _buildNavButton(
+                icon: Icons.people,
+                label: 'Usuarios',
+                isSelected: true,
+                onTap: () {}, // Ya estamos en list_users
+              ),
+              _buildNavButton(
+                icon: Icons.shopping_cart,
+                label: 'Productos',
+                isSelected: false,
+                onTap: () {
+                 navegarConFade(context, const ListInventoryScreen());
+                },
+              ),
+              _buildNavButton(
+                icon: Icons.build,
+                label: 'Servicios',
+                isSelected: false,
+                onTap: () {
+                  // TODO: Implementar navegación a servicios
+                },
+              ),
+              _buildNavButton(
+                icon: Icons.bar_chart,
+                label: 'Reportes',
+                isSelected: false,
+                onTap: () {
+                  // TODO: Implementar navegación a reportes
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavButton({
+    required IconData icon,
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.blue.withOpacity(0.1) : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? Colors.blue : Colors.grey,
+              size: 20,
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? Colors.blue : Colors.grey,
+                fontSize: 10,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              ),
+              textAlign: TextAlign.center,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
       ),
     );
   }

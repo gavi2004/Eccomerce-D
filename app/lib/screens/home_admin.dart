@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import './users/list_users.dart';
-import './users/create_user.dart';
+import './inventory/list_inventory.dart';
+import '../../utils/navigation.dart';
 import 'package:lottie/lottie.dart';
 
 class HomeAdmin extends StatelessWidget {
   const HomeAdmin({super.key});
 
+
+  
   void _mostrarDialogoCerrarSesion(BuildContext context) {
     showDialog(
       context: context,
@@ -104,14 +107,12 @@ class HomeAdmin extends StatelessWidget {
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: Colors.transparent,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
-              spreadRadius: 1,
-              blurRadius: 5,
-              offset: const Offset(0, -2),
-            ),
-          ],
+          boxShadow: [BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 5,
+            offset: const Offset(0, -2),
+          )],
         ),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -119,25 +120,43 @@ class HomeAdmin extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _buildNavButton(
-                icon: Icons.people,
-                label: 'Gestionar Usuarios',
+                icon: Icons.home,
+                label: 'Inicio',
                 isSelected: true,
+                onTap: () {}, // Ya estamos en home_admin
+              ),
+              _buildNavButton(
+                icon: Icons.people,
+                label: 'Usuarios',
+                isSelected: false,
                 onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const UserListScreen()),
-                  );
+                 navegarConFade(context, const UserListScreen());
                 },
               ),
               _buildNavButton(
-                icon: Icons.person_add,
-                label: 'Crear Usuario',
+                icon: Icons.shopping_cart,
+                label: 'Productos',
                 isSelected: false,
                 onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const CreateUserScreen()),
-                  );
+                  navegarConFade(context, const ListInventoryScreen());
+                },
+              ),
+              // Botón para futura implementación de servicios
+              _buildNavButton(
+                icon: Icons.build,
+                label: 'Servicios',
+                isSelected: false,
+                onTap: () {
+                  // TODO: Implementar navegación a servicios
+                },
+              ),
+              // Botón para futura implementación de reportes
+              _buildNavButton(
+                icon: Icons.bar_chart,
+                label: 'Reportes',
+                isSelected: false,
+                onTap: () {
+                  // TODO: Implementar navegación a reportes
                 },
               ),
             ],
@@ -156,7 +175,7 @@ class HomeAdmin extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8), // Reducido de 16 a 8
         decoration: BoxDecoration(
           color: isSelected ? Colors.blue.withOpacity(0.1) : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
@@ -167,16 +186,18 @@ class HomeAdmin extends StatelessWidget {
             Icon(
               icon,
               color: isSelected ? Colors.blue : Colors.grey,
-              size: 24,
+              size: 20, // Reducido de 24 a 20
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 2), // Reducido de 4 a 2
             Text(
               label,
               style: TextStyle(
                 color: isSelected ? Colors.blue : Colors.grey,
-                fontSize: 12,
+                fontSize: 10, // Reducido de 12 a 10
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
+              textAlign: TextAlign.center,
+              overflow: TextOverflow.ellipsis, // Agregar manejo de desbordamiento
             ),
           ],
         ),

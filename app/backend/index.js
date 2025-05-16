@@ -1,10 +1,14 @@
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
+const path = require('path');
 const Usuario = require('./models/usuario'); // Importar el modelo centralizado
 const loginRouter = require('./login');  // Asegúrate de importar el enrutador de login
 const verificarToken = require('./middleware/auth'); // Importar el middleware de autenticación
 const usersRouter = require('./routes/users'); // Importar el enrutador de usuarios
+const productsRouter = require('./routes/products'); // Agregar esta línea
+const uploadRouter = require('./routes/upload');
+const carritoRoutes = require('./routes/carrito');
 
 const app = express();
 const PORT = 5000;
@@ -97,6 +101,17 @@ app.use('/', usersRouter); // Montar el router de usuarios en la ruta base
 app.get('/ruta-protegida', verificarToken, (req, res) => {
     res.json({ message: 'Acceso permitido', usuario: req.usuario });
 });
+
+// Agregar esta línea junto a las demás rutas
+app.use('/products', productsRouter);
+
+app.use('/carrito', carritoRoutes);
+
+// Configurar el servicio de archivos estáticos para las imágenes
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Agregar la ruta de upload
+app.use('/upload', uploadRouter);
 
 // Iniciar servidor
 app.listen(PORT, () => {
